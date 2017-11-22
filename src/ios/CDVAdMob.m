@@ -587,30 +587,120 @@
 
 - (void) __showAd:(BOOL)show {
     //NSLog(@"Show Ad: %d", show);
+    
+    
 
     if (!self.bannerIsInitialized){
         [self __createBanner];
     }
+    
+    
+    if(show) {
+ 
+    
+    /** start testing **/
+    printf("showing admob banner");
+    
+    self.bannerView.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    UIView* parentView = [self.webView superview];
+    [parentView addSubview:self.bannerView];
+        
+    [parentView bringSubviewToFront:self.bannerView];
+    
+    
+    if (@available(ios 11.0, *)) {
+        
+        printf("position admob on safe area");
+        UILayoutGuide *guide = parentView.safeAreaLayoutGuide;
+        
+        
+        [NSLayoutConstraint activateConstraints:@[
+                                                  [self.bannerView.centerXAnchor constraintEqualToAnchor:guide.centerXAnchor],
+                                                  [self.bannerView.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor]
+                                                  ]];
+    
+    }
+ 
+    self.bannerIsVisible = YES;
+    [self resizeViews] ;
+        
+    }
+    
+    else {
+        [self.bannerView removeFromSuperview];
+        [self resizeViews];
+        
+        self.bannerIsVisible = NO;
+    }
+    
+    
+    
+  
+    //original code not iphone x compatible
+    
+    /**
+    
+    
 
     if (show == self.bannerIsVisible) { // same state, nothing to do
         //NSLog(@"already show: %d", show);
         [self resizeViews];
+        
+        
     } else if (show) {
         //NSLog(@"show now: %d", show);
+        
+        printf("showing admob banner");
+        
+        self.bannerView.translatesAutoresizingMaskIntoConstraints = NO;
 
         UIView* parentView = self.bannerOverlap ? self.webView : [self.webView superview];
         [parentView addSubview:self.bannerView];
         [parentView bringSubviewToFront:self.bannerView];
-        [self resizeViews];
+        
+        
+        if (@available(ios 11.0, *)) {
+            printf("position admob on safe area");
+            [self positionBannerViewAtBottomOfSafeArea:self.bannerView];
+            [self resizeViews];
+        }
+        else {
+            printf("resize admob views") ;
+            [self resizeViews];
+            
+        }
 
         self.bannerIsVisible = YES;
-    } else {
+    }
+    else {
         [self.bannerView removeFromSuperview];
         [self resizeViews];
 
         self.bannerIsVisible = NO;
     }
+     
+     **/
 }
+
+
+- (void)positionBannerViewAtBottomOfSafeArea:(UIView *_Nonnull)bannerView NS_AVAILABLE_IOS(11.0) {
+    // Position the banner. Stick it to the bottom of the Safe Area.
+    // Centered horizontally.
+    UIView* parentView = [self.webView superview];
+    UILayoutGuide *guide = parentView.safeAreaLayoutGuide;
+    [NSLayoutConstraint activateConstraints:@[
+                                              [bannerView.centerXAnchor constraintEqualToAnchor:guide.centerXAnchor],
+                                              [bannerView.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor]
+                                              ]];
+    
+   
+}
+
+
+
+
+
 
 - (void) __cycleInterstitial {
     NSLog(@"__cycleInterstitial");
@@ -673,7 +763,7 @@
     if(! self.offsetTopBar) top = 0.0;
 
     wf.origin.y = top;
-    wf.size.height = pr.size.height - top;
+    wf.size.height = pr.size.height - top ;
 
     if( self.bannerView ) {
         if( pr.size.width > pr.size.height ) {
@@ -710,11 +800,14 @@
                 if( bannerOverlap ) {
                     bf.origin.y = wf.size.height - bf.size.height; // banner is subview of webview
                 } else {
-                    bf.origin.y = pr.size.height - bf.size.height;
+                    bf.origin.y = pr.size.height - bf.size.height  ;
                 }
             }
 
             if(! bannerOverlap) wf.size.height -= bf.size.height;
+            
+            //add margin
+            wf.size.height -= 10 ;
 
             bf.origin.x = (pr.size.width - bf.size.width) * 0.5f;
 
@@ -724,7 +817,16 @@
         }
     }
 
+    if ( @available(ios 11.0, *) ) {
+        wf.size.height -= [self.webView superview].safeAreaInsets.bottom  ;
+    }
+    
+    
+    
     self.webView.frame = wf;
+    
+    
+    [self.webView superview ].backgroundColor = [UIColor blackColor];
 
     //NSLog(@"superview: %d x %d, webview: %d x %d", (int) pr.size.width, (int) pr.size.height, (int) wf.size.width, (int) wf.size.height );
 }
